@@ -19,12 +19,13 @@ function ProjectCard({ title, description, tags, delay = 0 }) {
       className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/40 p-5 shadow-2xl"
     >
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute -inset-1 bg-[conic-gradient(at_30%_30%,rgba(56,189,248,0.15),rgba(168,85,247,0.12),transparent_60%)]" />
+        <div className="absolute -inset-1 bg-[conic-gradient(at_30%_30%,rgba(56,189,248,0.12),rgba(168,85,247,0.1),transparent_60%)]" />
       </div>
 
       <div className="relative">
+        {/* Decorative header (no 3D images) */}
         <div className="mb-4 h-36 w-full overflow-hidden rounded-xl ring-1 ring-inset ring-white/10">
-          <div className="h-full w-full bg-[radial-gradient(60%_60%_at_50%_0%,rgba(56,189,248,0.25),transparent_60%)]" />
+          <div className="h-full w-full bg-[radial-gradient(60%_60%_at_50%_0%,rgba(59,130,246,0.2),transparent_60%)]" />
         </div>
         <h3 className="text-lg font-semibold text-white">{title}</h3>
         <p className="mt-2 text-sm text-white/70">{description}</p>
@@ -52,22 +53,22 @@ function ProjectCard({ title, description, tags, delay = 0 }) {
 export default function Projects() {
   const projects = [
     {
-      title: 'Neon Runner',
+      title: 'Midnight Dashboard',
       description:
-        'A fast-paced web experience with smooth animations and responsive design, themed like a retro arcade.',
-      tags: ['React', 'Framer Motion', 'UI/UX'],
+        'A clean analytics hub with high-contrast dark UI, keyboard-friendly navigation, and buttery transitions.',
+      tags: ['React', 'Framer Motion', 'A11y'],
     },
     {
-      title: 'Voxel Portfolio',
+      title: 'Aurora Docs',
       description:
-        'An immersive portfolio concept blending 3D aesthetics with clean information hierarchy.',
-      tags: ['3D', 'Spline', 'Interaction'],
+        'Documentation site with focus-first typography, instant search, and a subtle aurora glow.',
+      tags: ['Content', 'Search', 'Dark Mode'],
     },
     {
-      title: 'Quantum Dash',
+      title: 'Shadow Commerce',
       description:
-        'High-performance build with a focus on accessibility, dark mode, and delightful micro-interactions.',
-      tags: ['Performance', 'A11y', 'Dark Mode'],
+        'Performance-first storefront: snappy filters, graceful loading, and crisp color accents on a dark canvas.',
+      tags: ['Performance', 'UI/UX', 'E-commerce'],
     },
   ];
 
@@ -78,7 +79,7 @@ export default function Projects() {
           Featured Projects
         </h2>
         <p className="mt-3 text-white/70">
-          Game-inspired interfaces, modern code, and immersive visuals. Here are a few highlights.
+          Dark, modern interfaces built with care. Smooth motion, strong contrast, and accessible by design.
         </p>
       </div>
 
