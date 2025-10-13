@@ -18,14 +18,17 @@ export default function Navbar() {
             <a href="#projects" className="rounded-full px-4 py-2 text-sm text-white/80 transition hover:text-white">
               Projects
             </a>
+            <a href="#resumes" className="rounded-full px-4 py-2 text-sm text-white/80 transition hover:text-white">
+              Resumes
+            </a>
             <a href="#contact" className="rounded-full px-4 py-2 text-sm text-white/80 transition hover:text-white">
               Contact
             </a>
             <a
-              href="#projects"
+              href="#contact"
               className="ml-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-white to-amber-300 px-4 py-2 text-sm font-medium text-slate-900 shadow-[0_8px_30px_-12px_rgba(251,191,36,0.6)] transition hover:brightness-95"
             >
-              Add Project
+              Hire Me
             </a>
           </div>
         </nav>

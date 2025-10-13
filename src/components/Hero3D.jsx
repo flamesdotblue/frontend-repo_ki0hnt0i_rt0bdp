@@ -32,7 +32,7 @@ export default function Hero3D() {
             Build a playful, modern portfolio that feels alive
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
-            Crisp dark canvas, joyful accents, and an interactive hero. Start adding your work below.
+            Crisp dark canvas, joyful accents, and an interactive hero. Explore featured work below.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -41,14 +41,14 @@ export default function Hero3D() {
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-white to-amber-300 px-6 py-3 text-sm font-semibold text-slate-900 shadow-[0_10px_30px_-10px_rgba(251,191,36,0.55)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
               <Rocket className="h-4 w-4" />
-              Add your project
+              Explore projects
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
-              href="#contact"
+              href="#resumes"
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30"
             >
-              Contact Me
+              View Resumes
             </a>
           </div>
         </div>
