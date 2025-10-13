@@ -3,11 +3,14 @@ import { Github, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer id="contact" className="relative z-10 border-t border-white/10 bg-slate-950/60">
-      <div className="mx-auto max-w-7xl px-6 py-12">
+    <footer id="contact" className="relative z-10 border-t border-white/10 bg-slate-950/70">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div>
-            <h3 className="text-lg font-semibold text-white">Let’s build something cool</h3>
+            <h3 className="bg-gradient-to-r from-cyan-300 to-fuchsia-300 bg-clip-text text-lg font-semibold text-transparent">
+              Let’s build something unforgettable
+            </h3>
             <p className="mt-1 text-sm text-white/70">
               Available for freelance, full-time, or collaboration inquiries.
             </p>
@@ -31,7 +34,7 @@ export default function Footer() {
             </a>
           </div>
         </div>
-        <p className="mt-8 text-center text-xs text-white/50">
+        <p className="mt-10 text-center text-xs text-white/50">
           © {new Date().getFullYear()} Your Name. All rights reserved.
         </p>
       </div>

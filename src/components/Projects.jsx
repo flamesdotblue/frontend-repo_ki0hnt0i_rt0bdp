@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 function Tag({ children }) {
   return (
@@ -8,13 +9,23 @@ function Tag({ children }) {
   );
 }
 
-function ProjectCard({ title, description, tags }) {
+function ProjectCard({ title, description, tags, delay = 0 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/40 p-5 shadow-2xl transition-transform duration-300 hover:-translate-y-1">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(56,189,248,0.15),rgba(168,85,247,0.05)_70%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, delay }}
+      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/40 p-5 shadow-2xl"
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="absolute -inset-1 bg-[conic-gradient(at_30%_30%,rgba(56,189,248,0.15),rgba(168,85,247,0.12),transparent_60%)]" />
+      </div>
 
       <div className="relative">
-        <div className="mb-4 h-36 w-full rounded-xl bg-gradient-to-br from-cyan-500/20 via-fuchsia-500/20 to-amber-500/20 ring-1 ring-inset ring-white/10" />
+        <div className="mb-4 h-36 w-full overflow-hidden rounded-xl ring-1 ring-inset ring-white/10">
+          <div className="h-full w-full bg-[radial-gradient(60%_60%_at_50%_0%,rgba(56,189,248,0.25),transparent_60%)]" />
+        </div>
         <h3 className="text-lg font-semibold text-white">{title}</h3>
         <p className="mt-2 text-sm text-white/70">{description}</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -26,15 +37,15 @@ function ProjectCard({ title, description, tags }) {
         <div className="mt-4 flex items-center justify-between">
           <a
             href="#"
-            className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+            className="text-sm font-semibold text-cyan-300 transition hover:text-cyan-200"
             aria-label={`View details for ${title}`}
           >
             View details →
           </a>
-          <span className="text-xs text-white/50">Play Mode</span>
+          <span className="text-xs text-white/50">Live demo</span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -61,8 +72,8 @@ export default function Projects() {
   ];
 
   return (
-    <section id="projects" className="relative z-10 mx-auto max-w-7xl scroll-mt-20 px-6 py-20">
-      <div className="mx-auto mb-10 max-w-3xl text-center">
+    <section id="projects" className="relative z-10 mx-auto max-w-7xl scroll-mt-20 px-6 py-24">
+      <div className="mx-auto mb-12 max-w-3xl text-center">
         <h2 className="bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
           Featured Projects
         </h2>
@@ -72,9 +83,9 @@ export default function Projects() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((p) => (
-          <ProjectCard key={p.title} {...p} />
-        ))}
+        {projects.map((p, i) => (
+          <ProjectCard key={p.title} delay={i * 0.08} {...p} />)
+        )}
       </div>
     </section>
   );
