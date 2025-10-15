@@ -1,55 +1,36 @@
 import React from 'react';
 import Spline from '@splinetool/react-spline';
-import { Rocket, ArrowRight, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function Hero3D() {
   return (
-    <section id="home" className="relative h-[92vh] md:h-screen w-full">
-      {/* Interactive background */}
+    <section className="relative min-h-[90vh] w-full bg-black text-white">
       <div className="absolute inset-0">
-        <Spline
-          scene="https://prod.spline.design/VJLoxp84lCdVfdZu/scene.splinecode"
-          style={{ width: '100%', height: '100%' }}
-        />
+        <Spline scene="https://prod.spline.design/2JYkKQ6-pJ2wFKLQ/scene.splinecode" style={{ width: '100%', height: '100%' }} />
       </div>
 
-      {/* Non-blocking overlays for readability */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_20%,rgba(255,255,255,0.07),transparent_60%)] mix-blend-screen" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/80 to-transparent" />
+      {/* Gradient overlay for readability (does not block interactions) */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black" />
 
-      {/* Content */}
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-center justify-center px-6">
-        <div className="w-full text-center">
-          <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur">
-            <Star className="h-4 w-4 text-amber-300" />
-            <span className="text-xs font-medium tracking-wide text-white/90">
-              Resume Checker • ATS Optimizer
-            </span>
-          </div>
-
-          <h1 className="mx-auto max-w-5xl bg-gradient-to-b from-white via-white to-amber-200/90 bg-clip-text text-4xl font-extrabold leading-[1.05] text-transparent sm:text-5xl md:text-6xl">
-            Tailor your resume to any job — get an instant ATS score
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pt-40 pb-28">
+        <div className="max-w-2xl">
+          <p className="text-teal-300/90 text-sm uppercase tracking-wider">Resume Checker • ATS Optimizer</p>
+          <h1 className="mt-3 text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight">
+            Land more interviews with an ATS-friendly resume
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
-            Paste your resume and a job description. We highlight missing keywords, generate a better summary, and draft a tailored version.
+          <p className="mt-4 text-white/80 max-w-xl">
+            Paste your resume and a job description to instantly see keyword coverage, relevance, and a personalized score.
+            Get actionable suggestions and a tailored draft in seconds.
           </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex items-center gap-4">
             <a
               href="#analyze"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-white to-amber-300 px-6 py-3 text-sm font-semibold text-slate-900 shadow-[0_10px_30px_-10px_rgba(251,191,36,0.55)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="inline-flex items-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-black font-semibold px-5 py-3 transition-colors"
             >
-              <Rocket className="h-4 w-4" />
-              Start analyzing
+              Analyze My Resume
               <ArrowRight className="h-4 w-4" />
             </a>
-            <a
-              href="#contact"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30"
-            >
-              Contact
-            </a>
+            <a href="#contact" className="text-white/80 hover:text-white">Contact</a>
           </div>
         </div>
       </div>
