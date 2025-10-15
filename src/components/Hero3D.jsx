@@ -24,7 +24,7 @@ const Hero3D = memo(function Hero3D() {
             Land more interviews with an ATS-optimized resume
           </h1>
           <p className="mt-4 text-slate-600 text-base sm:text-lg">
-            Paste your resume and a job description to see exactly what matches, whats missing, and how to improveall in seconds.
+            Paste your resume and a job description to see exactly what matches, what's missing, and how to improve — all in seconds.
           </p>
           <div className="mt-6 flex items-center gap-3">
             <a href="#analyzer" className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-white text-sm font-medium shadow hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/20">
