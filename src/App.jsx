@@ -1,8 +1,7 @@
 import React from 'react';
 import Navbar from './components/Navbar.jsx';
 import Hero3D from './components/Hero3D.jsx';
-import Projects from './components/Projects.jsx';
-import Resumes from './components/Resumes.jsx';
+import ATSAnalyzer from './components/ATSAnalyzer.jsx';
 import Footer from './components/Footer.jsx';
 
 function App() {
@@ -18,8 +17,7 @@ function App() {
       <Navbar />
       <main>
         <Hero3D />
-        <Projects />
-        <Resumes />
+        <ATSAnalyzer />
       </main>
       <Footer />
     </div>

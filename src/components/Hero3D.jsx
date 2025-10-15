@@ -24,31 +24,31 @@ export default function Hero3D() {
           <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur">
             <Star className="h-4 w-4 text-amber-300" />
             <span className="text-xs font-medium tracking-wide text-white/90">
-              Tech • Interactive • Optimistic
+              Resume Checker • ATS Optimizer
             </span>
           </div>
 
           <h1 className="mx-auto max-w-5xl bg-gradient-to-b from-white via-white to-amber-200/90 bg-clip-text text-4xl font-extrabold leading-[1.05] text-transparent sm:text-5xl md:text-6xl">
-            Build a playful, modern portfolio that feels alive
+            Tailor your resume to any job — get an instant ATS score
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
-            Crisp dark canvas, joyful accents, and an interactive hero. Explore featured work below.
+            Paste your resume and a job description. We highlight missing keywords, generate a better summary, and draft a tailored version.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
-              href="#projects"
+              href="#analyze"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-white to-amber-300 px-6 py-3 text-sm font-semibold text-slate-900 shadow-[0_10px_30px_-10px_rgba(251,191,36,0.55)] transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
               <Rocket className="h-4 w-4" />
-              Explore projects
+              Start analyzing
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
-              href="#resumes"
+              href="#contact"
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30"
             >
-              View Resumes
+              Contact
             </a>
           </div>
         </div>
