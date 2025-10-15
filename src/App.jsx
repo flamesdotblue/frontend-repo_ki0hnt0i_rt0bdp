@@ -8,7 +8,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
-      <main>
+      <main className="pt-16">{/* offset for fixed header */}
         <Hero3D />
         <ATSAnalyzer />
       </main>
