@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
 import { FileText, Check, X, Download, Upload } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth/mammoth.browser";
+import Tesseract from "tesseract.js";
+import { jsPDF } from "jspdf";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+
+// Configure PDF.js worker (required in browser bundlers)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const STOP_WORDS = new Set([
   "the","a","an","and","or","but","if","then","else","when","at","by","from","for","in","into","of","on","onto","to","with","as","is","are","was","were","be","been","being","it","its","this","that","these","those","your","you","we","our"
@@ -42,10 +50,9 @@ function score(resumeText, jdText) {
 
 function highlightText(text, keywords) {
   if (!text) return "";
-  // simple word-boundary highlighting
   const parts = text.split(/(\b)/);
   return parts
-    .map((part, idx) => {
+    .map((part) => {
       const token = part.toLowerCase();
       if (keywords.has(token)) {
         return `<mark class="bg-emerald-500/20 text-emerald-300 rounded px-0.5">${part}</mark>`;
@@ -55,10 +62,59 @@ function highlightText(text, keywords) {
     .join("");
 }
 
+async function extractTextFromPDF(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map((it) => (it.str ? it.str : ""));
+    text += strings.join(" ") + "\n";
+  }
+  return text;
+}
+
+async function extractTextFromDocx(arrayBuffer) {
+  const { value } = await mammoth.extractRawText({ arrayBuffer });
+  return value || "";
+}
+
+async function extractTextFromImage(file) {
+  const result = await Tesseract.recognize(file, "eng");
+  return result?.data?.text || "";
+}
+
+async function readFileToText(file) {
+  const name = file.name.toLowerCase();
+  const type = file.type;
+  if (type === "text/plain" || name.endsWith(".txt")) {
+    return await file.text();
+  }
+  if (type === "application/pdf" || name.endsWith(".pdf")) {
+    const buf = await file.arrayBuffer();
+    return await extractTextFromPDF(buf);
+  }
+  if (
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    name.endsWith(".docx")
+  ) {
+    const buf = await file.arrayBuffer();
+    return await extractTextFromDocx(buf);
+  }
+  if (type === "image/jpeg" || type === "image/png" || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png")) {
+    return await extractTextFromImage(file);
+  }
+  // Legacy .doc or unknown types
+  return await file.text().catch(() => "");
+}
+
 export default function ATSAnalyzer() {
   const [resume, setResume] = useState("");
   const [jd, setJd] = useState("");
-  const [resumeName, setResumeName] = useState("resume.txt");
+  const [resumeName, setResumeName] = useState("resume-optimized");
+  const [downloadFormat, setDownloadFormat] = useState("pdf"); // 'txt' | 'pdf' | 'docx'
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const analysis = useMemo(() => score(resume, jd), [resume, jd]);
 
@@ -77,48 +133,94 @@ export default function ATSAnalyzer() {
 
   const handleUpload = async (file, target) => {
     if (!file) return;
-    // Only .txt supported for now
-    if (!file.name.toLowerCase().endsWith(".txt")) {
-      alert("Please upload a .txt file for now. You can also paste your text directly.");
-      return;
-    }
-    const text = await file.text();
-    if (target === "resume") {
-      setResume(text);
-      setResumeName(file.name.replace(/\.[^/.]+$/, "") + "-optimized.txt");
-    } else {
-      setJd(text);
+    setError("");
+    setLoading(true);
+    try {
+      const text = await readFileToText(file);
+      if (!text || text.trim().length === 0) {
+        setError("Could not extract text from the selected file. Try another file or paste your text.");
+      }
+      if (target === "resume") {
+        setResume(text);
+        const base = file.name.replace(/\.[^/.]+$/, "");
+        setResumeName(base + "-optimized");
+      } else {
+        setJd(text);
+      }
+    } catch (e) {
+      setError("Upload failed. Please try a different file format or paste your text.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const downloadSummary = () => {
-    const content = `ATS Analysis\n\nScore: ${analysis.weighted}\nCoverage: ${(analysis.coverage * 100).toFixed(1)}%\nDensity: ${(analysis.density * 100).toFixed(1)}%\n\nMatched: ${analysis.matched.join(", ")}\nMissing: ${analysis.missing.join(", ")}\n\nSuggestions:\n- ${suggestions.join("\n- ")}`;
+  const buildSummaryText = () => `ATS Analysis\n\nScore: ${analysis.weighted}\nCoverage: ${(analysis.coverage * 100).toFixed(1)}%\nDensity: ${(analysis.density * 100).toFixed(1)}%\n\nMatched: ${analysis.matched.join(", ")}\nMissing: ${analysis.missing.join(", ")}\n\nSuggestions:\n- ${suggestions.join("\n- ")}`;
+
+  const buildOptimizedText = () => {
+    const booster = analysis.missing.length
+      ? `\n\nSkills & Keywords: ${analysis.matched.concat(analysis.missing.slice(0, 15)).join(", ")}`
+      : "";
+    return resume.trim() + booster + "\n";
+  };
+
+  const downloadAsTxt = (content, filename) => {
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "ats_analysis.txt";
+    a.download = filename.endsWith(".txt") ? filename : `${filename}.txt`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
   };
 
-  const downloadOptimized = () => {
-    // Append a keyword booster line to improve ATS signals while keeping content concise.
-    const booster = analysis.missing.length
-      ? `\n\nSkills & Keywords: ${analysis.matched.concat(analysis.missing.slice(0, 15)).join(", ")}`
-      : "";
-    const optimized = resume.trim() + booster + "\n";
-    const blob = new Blob([optimized], { type: "text/plain;charset=utf-8" });
+  const downloadAsPDF = (content, filename, title) => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const maxWidth = 595.28 - margin * 2; // A4 width in pt
+    doc.setFont("Helvetica", "normal");
+    if (title) {
+      doc.setFontSize(16);
+      doc.text(title, margin, margin);
+    }
+    doc.setFontSize(12);
+    const lines = doc.splitTextToSize(content, maxWidth);
+    const startY = title ? margin + 24 : margin;
+    doc.text(lines, margin, startY);
+    doc.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+  };
+
+  const downloadAsDocx = async (content, filename, title) => {
+    const paragraphs = [];
+    if (title) paragraphs.push(new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })] }));
+    content.split("\n").forEach((line) => paragraphs.push(new Paragraph(line)));
+    const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+    const blob = await Packer.toBlob(doc);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = resumeName || "resume-optimized.txt";
+    a.download = filename.endsWith(".docx") ? filename : `${filename}.docx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadSummary = async () => {
+    const content = buildSummaryText();
+    const base = "ats_analysis";
+    if (downloadFormat === "txt") return downloadAsTxt(content, `${base}.txt`);
+    if (downloadFormat === "pdf") return downloadAsPDF(content, `${base}.pdf`, "ATS Analysis");
+    if (downloadFormat === "docx") return await downloadAsDocx(content, `${base}.docx`, "ATS Analysis");
+  };
+
+  const downloadOptimized = async () => {
+    const content = buildOptimizedText();
+    const base = resumeName || "resume-optimized";
+    if (downloadFormat === "txt") return downloadAsTxt(content, `${base}.txt`);
+    if (downloadFormat === "pdf") return downloadAsPDF(content, `${base}.pdf`, "Optimized Resume");
+    if (downloadFormat === "docx") return await downloadAsDocx(content, `${base}.docx`, "Optimized Resume");
   };
 
   const matchedSet = useMemo(() => new Set(analysis.matched), [analysis.matched]);
@@ -133,10 +235,10 @@ export default function ATSAnalyzer() {
                 <FileText size={18} /> Resume
               </h2>
               <label className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white cursor-pointer">
-                <Upload size={16} /> Upload .txt
+                <Upload size={16} /> Upload (.txt, .pdf, .docx, .jpg, .png)
                 <input
                   type="file"
-                  accept=".txt"
+                  accept=".txt,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,image/jpeg,image/png,.jpg,.jpeg,.png"
                   onChange={(e) => handleUpload(e.target.files?.[0], "resume")}
                   className="hidden"
                 />
@@ -160,10 +262,10 @@ export default function ATSAnalyzer() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold tracking-tight text-white">Job Description</h2>
               <label className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white cursor-pointer">
-                <Upload size={16} /> Upload .txt
+                <Upload size={16} /> Upload (.txt, .pdf, .docx, .jpg, .png)
                 <input
                   type="file"
-                  accept=".txt"
+                  accept=".txt,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,image/jpeg,image/png,.jpg,.jpeg,.png"
                   onChange={(e) => handleUpload(e.target.files?.[0], "jd")}
                   className="hidden"
                 />
@@ -194,20 +296,38 @@ export default function ATSAnalyzer() {
             <div className="mt-4 text-sm text-slate-300">
               Coverage {(analysis.coverage * 100).toFixed(0)}% • Density {(analysis.density * 100).toFixed(0)}%
             </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={downloadSummary}
-                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3.5 py-2 text-sm font-medium text-white shadow hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/30"
-              >
-                <Download size={16} /> Download Summary
-              </button>
-              <button
-                onClick={downloadOptimized}
-                className="inline-flex items-center gap-2 rounded-md bg-indigo-500 px-3.5 py-2 text-sm font-medium text-white shadow hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30"
-              >
-                <Download size={16} /> Download Optimized
-              </button>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 text-sm text-slate-300">
+                <span>Download as</span>
+                <select
+                  value={downloadFormat}
+                  onChange={(e) => setDownloadFormat(e.target.value)}
+                  className="rounded-md bg-white/10 border border-white/10 px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/30"
+                >
+                  <option value="pdf">PDF</option>
+                  <option value="docx">Word (.docx)</option>
+                  <option value="txt">Plain text</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={downloadSummary}
+                  className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3.5 py-2 text-sm font-medium text-white shadow hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/30"
+                  disabled={loading}
+                >
+                  <Download size={16} /> Download Summary
+                </button>
+                <button
+                  onClick={downloadOptimized}
+                  className="inline-flex items-center gap-2 rounded-md bg-indigo-500 px-3.5 py-2 text-sm font-medium text-white shadow hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30"
+                  disabled={loading}
+                >
+                  <Download size={16} /> Download Optimized
+                </button>
+              </div>
             </div>
+            {loading && <div className="mt-3 text-sm text-slate-400">Processing file…</div>}
+            {error && <div className="mt-3 text-sm text-rose-300">{error}</div>}
           </div>
           <div className="rounded-xl border border-white/10 p-5 bg-white/5">
             <div className="text-sm font-medium text-white mb-2">Matched</div>
