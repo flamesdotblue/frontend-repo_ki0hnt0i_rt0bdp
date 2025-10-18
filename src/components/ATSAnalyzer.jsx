@@ -9,9 +9,30 @@ import { Document, Packer, Paragraph, TextRun } from "docx";
 // Configure PDF.js worker (required in browser bundlers)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
+// Basic stop words (function words)
 const STOP_WORDS = new Set([
-  "the","a","an","and","or","but","if","then","else","when","at","by","from","for","in","into","of","on","onto","to","with","as","is","are","was","were","be","been","being","it","its","this","that","these","those","your","you","we","our"
+  "the","a","an","and","or","but","if","then","else","when","at","by","from","for","in","into","of","on","onto","to","with","as","is","are","was","were","be","been","being","it","its","this","that","these","those","your","you","we","our","i","my"
 ]);
+
+// Domain-common words we do not want to influence scoring even if present
+const COMMON_NON_TECH = new Set([
+  "experience","experiences","years","year","work","worked","working","team","teams","cross","functional","responsible","responsibility","responsibilities","include","including","maintain","maintaining","develop","developed","development","build","built","building","implement","implemented","implementation","deliver","delivered","delivery","create","created","creating","manage","managed","management","support","supported","supporting","drive","driven","driving","strong","excellent","good","great","ability","skills","skill","communicate","communication","collaborate","collaboration","fast","paced","environment","candidate","role","position","required","requirements","preferred","plus","knowledge","familiar","familiarity","etc","others","tasks","detail","detailed","proficient","proficiency","problem","problems","solving","solution","solutions","analysis","analytical","results","oriented","self","motivated","learn","learning","quick","quickly","ensure","ensuring","ensure","ensure","must","should","will","can","could","within","across","using","use","utilize","utilized","best","practices","process","processes","ability","high","quality","organization","organizational","drive","driven","lead","led","leadership","own","ownership","impact","effective","effectively","efficient","efficiently","passion","passionate","culture","stakeholder","stakeholders","partner","partners","coordinate","coordination","initiative","nice","have","nice-to-have","perform","performance","scale","scalable","scalability","align","alignment","collaborative","detail-oriented","details","deadline","deadlines","meet","meeting","meets","achieve","achieving","accomplish","accomplishing","story","stories","epic","epics","sprint","sprints","agile","scrum","kanban","objectives","okrs","okr","roadmap","roadmaps","plan","planning","plans","document","documentation","docs","doc","interview","interviews","interpersonal","verbal","written","english"
+]);
+
+const SKILLS_HEADINGS = [
+  "skills",
+  "technical skills",
+  "tech skills",
+  "technologies",
+  "technology",
+  "tools",
+  "tooling",
+  "stack",
+  "tech stack",
+  "core skills",
+  "key skills",
+  "expertise"
+];
 
 function tokenize(text) {
   return text
@@ -19,6 +40,10 @@ function tokenize(text) {
     .replace(/[^a-z0-9+#. ]/g, " ")
     .split(/\s+/)
     .filter((t) => t && !STOP_WORDS.has(t));
+}
+
+function filterCommon(tokens) {
+  return tokens.filter((t) => !COMMON_NON_TECH.has(t));
 }
 
 function keywordStats(tokens) {
@@ -29,23 +54,62 @@ function keywordStats(tokens) {
     .slice(0, 50);
 }
 
-function score(resumeText, jdText) {
-  const rTokens = tokenize(resumeText);
-  const jTokens = tokenize(jdText);
+function extractSkillsSection(text) {
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  let bestIndex = -1;
+  let bestHeading = "";
+  for (const h of SKILLS_HEADINGS) {
+    const idx = lower.indexOf(h);
+    if (idx !== -1 && (bestIndex === -1 || idx < bestIndex)) {
+      bestIndex = idx;
+      bestHeading = h;
+    }
+  }
+  if (bestIndex === -1) return "";
+  // Take content after heading up to the next double newline or next header-like line
+  const after = lower.slice(bestIndex + bestHeading.length);
+  const match = after.match(/([\s\S]*?)(\n\s*\n|\n[A-Z][^\n]{0,40}\n|$)/);
+  const section = match ? match[1] : after;
+  return section || "";
+}
 
+function score(resumeText, jdText) {
+  // Tokenize and filter common non-technical words from JD side first
+  const jTokensRaw = tokenize(jdText);
+  const jTokens = filterCommon(jTokensRaw);
+
+  // Compute JD top keywords after filtering common noise
   const jdTop = keywordStats(jTokens).map(([k]) => k);
+
+  // Resume tokens (we keep raw tokens; density weighting will manage)
+  const rTokens = tokenize(resumeText);
   const rSet = new Set(rTokens);
 
+  // Skills-aware weighting: extract skills section from resume
+  const skillsSection = extractSkillsSection(resumeText);
+  const skillsTokens = new Set(tokenize(skillsSection));
+
+  // Matched/missing against JD keywords
   const matched = jdTop.filter((k) => rSet.has(k));
   const missing = jdTop.filter((k) => !rSet.has(k));
 
+  // Coverage (unique JD keywords present in resume)
   const coverage = jdTop.length ? matched.length / jdTop.length : 0;
 
-  const totalMatches = rTokens.filter((t) => jdTop.includes(t)).length;
-  const density = rTokens.length ? totalMatches / rTokens.length : 0;
+  // Weighted density: count occurrences of JD keywords in resume, giving extra weight to tokens within Skills section
+  let weightedMatches = 0;
+  for (const t of rTokens) {
+    if (jdTop.includes(t)) {
+      weightedMatches += skillsTokens.has(t) ? 2.0 : 1.0; // 2x weight in technical skills
+    }
+  }
+  const densityWeighted = rTokens.length ? Math.min(1, weightedMatches / rTokens.length) : 0;
 
-  const weighted = Math.round((coverage * 0.65 + density * 0.35) * 100);
-  return { weighted, matched, missing, coverage, density, jdTop };
+  // Final weighted score emphasizes skills presence and de-emphasizes common words already filtered
+  const weighted = Math.round((coverage * 0.55 + densityWeighted * 0.45) * 100);
+
+  return { weighted, matched, missing, coverage, density: densityWeighted, jdTop, skillsTokens };
 }
 
 function highlightText(text, keywords) {
@@ -157,10 +221,10 @@ export default function ATSAnalyzer() {
   const buildSummaryText = () => `ATS Analysis\n\nScore: ${analysis.weighted}\nCoverage: ${(analysis.coverage * 100).toFixed(1)}%\nDensity: ${(analysis.density * 100).toFixed(1)}%\n\nMatched: ${analysis.matched.join(", ")}\nMissing: ${analysis.missing.join(", ")}\n\nSuggestions:\n- ${suggestions.join("\n- ")}`;
 
   const buildOptimizedText = () => {
-    const booster = analysis.missing.length
+    const skillsEmphasis = analysis.missing.length
       ? `\n\nSkills & Keywords: ${analysis.matched.concat(analysis.missing.slice(0, 15)).join(", ")}`
       : "";
-    return resume.trim() + booster + "\n";
+    return resume.trim() + skillsEmphasis + "\n";
   };
 
   const downloadAsTxt = (content, filename) => {
